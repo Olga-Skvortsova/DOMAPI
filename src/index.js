@@ -3,6 +3,19 @@ const input = document.querySelector('.select-block__input');
 const autocompete = document.querySelector('.select-block__autocompete');
 const selectedBlock = document.querySelector('.selected-block');
 
+const debounce = (fn, debounceTime) => {
+    let timeot
+    return function () {
+        const fnCall = () => {
+            fn.apply(this, arguments)
+        }
+        clearTimeout(timeot)
+        timeot = setTimeout(fnCall, debounceTime)
+    }
+};
+
+getPost = debounce(getPost, 500)
+
 input.onkeyup = (userSearch) => {
     if (autocompete.children.length !== 0) {
         autocompete.innerHTML = ''
