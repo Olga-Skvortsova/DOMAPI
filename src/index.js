@@ -3,38 +3,54 @@ const input = document.querySelector('.select-block__input');
 const autocompete = document.querySelector('.select-block__autocompete');
 const selectedBlock = document.querySelector('.selected-block');
 
+let controller = new AbortController();
+
 const debounce = (fn, debounceTime) => {
-    let timeot
+    let timeout;
     return function () {
         const fnCall = () => {
-            fn.apply(this, arguments)
-        }
-        clearTimeout(timeot)
-        timeot = setTimeout(fnCall, debounceTime)
-    }
+            fn.apply(this, arguments);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(fnCall, debounceTime);
+    };
 };
 
-getPost = debounce(getPost, 500)
+getPost = debounce(getPost, 500);
 
-input.onkeyup = (userSearch) => {
+input.addEventListener('input', (userSearch) => {
+    controller.abort();
+    controller = new AbortController();
+
     if (autocompete.children.length !== 0) {
-        autocompete.innerHTML = ''
+        autocompete.innerHTML = '';
     }
-    if (userSearch.target.value != '' && userSearch.target.value.trim() != '') {
-        getPost(userSearch.target.value)
-    }
-}
 
-function getPost (word) {
+    const inputValue = userSearch.target.value.trim();
+    if (/^[a-zA-Zа-яА-Я0-9\s\W]+$/.test(inputValue)) {
+        getPost(inputValue, controller);
+    }
+});
+
+
+function getPost(word, controller) {
     return fetch(`https://api.github.com/search/repositories?q=${word}`, {
         headers: {
-            "Accept": "application/json",
-        }
+            'Accept': 'application/json',
+        },
+        signal: controller.signal,
     })
-    .then(responce => responce.json())
-    .then(posts => {
-        resultOfSearch(posts)
-    })
+        .then((response) => response.json())
+        .then((posts) => {
+            resultOfSearch(posts);
+        })
+        .catch((error) => {
+            if (error.name === 'AbortError') {
+                console.log('Request aborted');
+            } else {
+                console.error('Error:', error);
+            }
+        });
 }
 
 function resultOfSearch(massive) {
